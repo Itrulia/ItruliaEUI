@@ -1,0 +1,14 @@
+## Interface: 120007, 120100
+## Author: Itrulia
+## Version: @project-version@
+## Title: |cffe9e9edItrulia|r|cff3fbf9fEUI|r
+## DefaultState: enabled
+## Category: Itrulia
+## SavedVariables: ItruliaEUIDB
+## Dependencies: ItruliaQoL, EllesmereUI
+## X-Wago-ID: BNBmEeGx
+## X-Curse-Project-ID: 1644615
+
+embeds.xml
+
+src\init.xml
