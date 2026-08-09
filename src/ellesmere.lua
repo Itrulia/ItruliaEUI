@@ -36,6 +36,8 @@ local GROUP_LABEL_COLORED = "|cffe9e9edItrulia|r |cff3fbf9fEUI|r"
 
 local PAGE_GENERAL  = "General"
 local PAGE_SETTINGS = "Settings"
+local PAGE_PROFILES = "Profiles"
+local PAGE_IMPEXP   = "Import / Export"
 
 -- "Inofficial module" disclaimer at the top of the General page, modelled on
 -- ItruliaQoL's beta notice minus its beta framing: this addon has no ElvUI or
@@ -223,6 +225,17 @@ function ItruliaEUI:RegisterEUI()
                 return QoL:BuildEUIModulePage(module, parent, y, true, pageName)
             end, module.euiDescription, members)
     end
+
+    -- Last, after the modules, so the sidebar reads settings-then-housekeeping the
+    -- way ItruliaQoL's group does. Both pages are ItruliaQoL's, pointed at this
+    -- addon's own database and profile strings by the `self` argument.
+    addEntry("Profiles", "Profiles", { PAGE_PROFILES, PAGE_IMPEXP }, function(pageName, parent, y)
+        if pageName == PAGE_IMPEXP then
+            return QoL:BuildEUIImportExportPage(parent, y, self)
+        end
+
+        return QoL:BuildEUIProfilesPage(parent, y, self)
+    end, "Profiles")
 
     self:InjectSidebar(entries)
 

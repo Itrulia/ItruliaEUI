@@ -6,6 +6,9 @@ ItruliaEUI.testMode = false
 ItruliaEUI.EUI = _G.EllesmereUI
 ItruliaEUI.QoL = _G.ItruliaQoL
 
+local AceSerializer = LibStub("AceSerializer-3.0")
+local LibDeflate = LibStub("LibDeflate")
+
 function ItruliaEUI:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("ItruliaEUIDB", {}, true)
 
@@ -38,6 +41,93 @@ function ItruliaEUI:ApplyModuleStyles(moduleName)
     if frame and frame.UpdateStyles then
         frame:UpdateStyles()
     end
+end
+
+function ItruliaEUI:ExportCurrentProfile()
+    local profileName = self.db:GetCurrentProfile()
+    local profileData = self.db.profiles[profileName]
+
+    local serialized = AceSerializer:Serialize(profileData)
+    local compressed = LibDeflate:CompressDeflate(serialized)
+    local encoded = LibDeflate:EncodeForPrint(compressed)
+
+    return addonName .. encoded
+end
+
+function ItruliaEUI:DecodeImportString(str)
+    if type(str) ~= "string" or not str:find("^" .. addonName) then
+        return false, "Missing or invalid prefix"
+    end
+
+    local payload = str:sub(#addonName + 1)
+
+    local decoded = LibDeflate:DecodeForPrint(payload)
+    if not decoded then
+        return false, "Invalid encoded data"
+    end
+
+    local decompressed = LibDeflate:DecompressDeflate(decoded)
+    if not decompressed then
+        return false, "Decompression failed"
+    end
+
+    local success, data = AceSerializer:Deserialize(decompressed)
+    if not success or type(data) ~= "table" then
+        return false, "Invalid serialized profile"
+    end
+
+    return true, data
+end
+
+function ItruliaEUI:ImportAsNewProfile(str, profileName, override)
+    if not profileName or profileName == "" then
+        return false, "Invalid profile name"
+    end
+
+    if self.db.profiles[profileName] and not override then
+        return false, "Profile already exists"
+    end
+
+    local ok, data = self:DecodeImportString(str)
+    if not ok then
+        return false, data
+    end
+
+    self.db:SetProfile(profileName)
+
+    local profile = self.db.profile
+    for k in pairs(profile) do
+        profile[k] = nil
+    end
+
+    for k, v in pairs(data) do
+        profile[k] = v
+    end
+
+    self:RefreshModules()
+
+    return true
+end
+
+function ItruliaEUI:ImportIntoCurrentProfile(str)
+    local ok, dataOrErr = self:DecodeImportString(str)
+    if not ok then
+        return false, dataOrErr
+    end
+
+    local profile = self.db.profile
+
+    for k in pairs(profile) do
+        profile[k] = nil
+    end
+
+    for k, v in pairs(dataOrErr) do
+        profile[k] = v
+    end
+
+    self:RefreshModules()
+
+    return true
 end
 
 function ItruliaEUI:ToggleTestMode(enabled)
