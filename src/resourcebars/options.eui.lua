@@ -72,8 +72,6 @@ local function textureRow(power)
     return row
 end
 
--- Pair up a list of rows, two per settings row. An odd one out keeps its half
--- rather than stretching a dropdown across the full width.
 local function paired(rows, out)
     for i = 1, #rows, 2 do
         out[#out + 1] = { pair = { rows[i], rows[i + 1] or { type = "empty" } } }
@@ -101,7 +99,7 @@ function ResourceBars:GetEUIOptions()
     rows[#rows + 1] = { spacer = 8 }
     rows[#rows + 1] = { header = "CLASS RESOURCE" }
     rows[#rows + 1] = {
-        text = "Used for the class bar -- the pips, runes or bar EllesmereUI draws for your secondary resource. The cogwheel next to each one splits it into separate bars, one per point, instead of pips sharing a single frame.",
+        text = "Used for the class bar, the pips, runes or bar EllesmereUI draws for your secondary resource. The cogwheel next to each one splits it into separate bars, one per point, instead of pips sharing a single frame.",
     }
 
     paired(class, rows)

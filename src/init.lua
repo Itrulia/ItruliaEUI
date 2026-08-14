@@ -79,18 +79,26 @@ function ItruliaEUI:DecodeImportString(str)
     return true, data
 end
 
-function ItruliaEUI:ImportAsNewProfile(str, profileName, override)
+local function finish(callback, ok, err)
+    if callback then
+        callback(ok, err)
+    end
+
+    return ok, err
+end
+
+function ItruliaEUI:ImportAsNewProfile(str, profileName, override, callback)
     if not profileName or profileName == "" then
-        return false, "Invalid profile name"
+        return finish(callback, false, "Invalid profile name")
     end
 
     if self.db.profiles[profileName] and not override then
-        return false, "Profile already exists"
+        return finish(callback, false, "Profile already exists")
     end
 
     local ok, data = self:DecodeImportString(str)
     if not ok then
-        return false, data
+        return finish(callback, false, data)
     end
 
     self.db:SetProfile(profileName)
@@ -106,13 +114,13 @@ function ItruliaEUI:ImportAsNewProfile(str, profileName, override)
 
     self:RefreshModules()
 
-    return true
+    return finish(callback, true)
 end
 
-function ItruliaEUI:ImportIntoCurrentProfile(str)
+function ItruliaEUI:ImportIntoCurrentProfile(str, callback)
     local ok, dataOrErr = self:DecodeImportString(str)
     if not ok then
-        return false, dataOrErr
+        return finish(callback, false, dataOrErr)
     end
 
     local profile = self.db.profile
@@ -127,7 +135,7 @@ function ItruliaEUI:ImportIntoCurrentProfile(str)
 
     self:RefreshModules()
 
-    return true
+    return finish(callback, true)
 end
 
 function ItruliaEUI:ToggleTestMode(enabled)
@@ -149,7 +157,7 @@ function ItruliaEUI:SlashProcessor(input)
         if self.EUI and self.EUI.ShowModule then
             self.EUI:ShowModule(addonName .. "_General")
         else
-            self:Print("|cffff8000EllesmereUI is not available|r -- these settings have no other panel.")
+            self:Print("|cffff8000EllesmereUI is not available|r. These settings have no other panel.")
         end
     elseif arg == "test" or arg == "t" then
         self:ToggleTestMode(not self.testMode)

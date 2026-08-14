@@ -15,4 +15,4 @@ Settings live in the **EllesmereUI** config window, under the **Itrulia EUI** si
 
 ## AI Use
 
-There's a limit amount of AI used in the code. Such as Ellesmere configs, EllesmereUI integration, spell checking and writing documentation.
+There's a limited amount of AI used in the code. Such as Ellesmere configs, EllesmereUI integration, spell checking and writing documentation. All code is checked and approved before committed.

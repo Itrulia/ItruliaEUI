@@ -18,7 +18,7 @@ local addonName, ItruliaEUI = ...
 
 -- Our own sidebar group, so these rows sit under their own heading instead of
 -- being mixed into ItruliaQoL's.
-local GROUP_KEY   = "itruliaeui"
+local groupKey = "itruliaeui"
 
 -- The name in the addon's own colours (the same escape sequence as `## Title` in
 -- the .toc, so it reads the way the addon does in the AddOns list). Both places
@@ -32,12 +32,12 @@ local GROUP_KEY   = "itruliaeui"
 --
 -- The rows' plain-text `search_name` keeps the uncoloured spelling, since that is
 -- matched against the player's query rather than drawn.
-local GROUP_LABEL_COLORED = "|cffe9e9edItrulia|r |cff3fbf9fEUI|r"
+local groupLabelColored = "|cffe9e9edItrulia|r |cff3fbf9fEUI|r"
 
-local PAGE_GENERAL  = "General"
-local PAGE_SETTINGS = "Settings"
-local PAGE_PROFILES = "Profiles"
-local PAGE_IMPEXP   = "Import / Export"
+local pageGeneral      = "General"
+local pageSettings     = "Settings"
+local pageProfiles     = "Profiles"
+local pageImportExport = "Import / Export"
 
 -- "Inofficial module" disclaimer at the top of the General page, modelled on
 -- ItruliaQoL's beta notice minus its beta framing: this addon has no ElvUI or
@@ -50,7 +50,7 @@ function ItruliaEUI:RenderNotice(parent, y)
     local pad = EUI.CONTENT_PAD or 0
     local fontPath = (EUI.GetFontPath and EUI.GetFontPath()) or STANDARD_TEXT_FONT
 
-    local PAD_X, PAD_Y = 12, 10
+    local padX, padY = 12, 10
     local availW = parent:GetWidth() - pad * 2
 
     local frame = CreateFrame("Frame", nil, parent)
@@ -64,19 +64,19 @@ function ItruliaEUI:RenderNotice(parent, y)
     local title = frame:CreateFontString(nil, "OVERLAY")
     title:SetFont(fontPath, 16, "OUTLINE")
     title:SetTextColor(1, 0.75, 0.2, 1)
-    title:SetPoint("TOPLEFT", frame, "TOPLEFT", PAD_X, -PAD_Y)
+    title:SetPoint("TOPLEFT", frame, "TOPLEFT", padX, -padY)
     title:SetText("INOFFICIAL MODULE")
 
     local support = frame:CreateFontString(nil, "OVERLAY")
     support:SetFont(fontPath, 12, "")
     support:SetTextColor(1, 0.85, 0.5, 0.9)
     support:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -6)
-    support:SetWidth(availW - PAD_X * 2)
+    support:SetWidth(availW - padX * 2)
     support:SetJustifyH("LEFT")
     support:SetWordWrap(true)
     support:SetText("Itrulia EUI is an inofficial module and not part of EllesmereUI. Please do not ask about it in the EllesmereUI Discord. Message Itrulia on Discord directly instead.")
 
-    local height = PAD_Y + title:GetStringHeight() + 6 + support:GetStringHeight() + PAD_Y + 8
+    local height = padY + title:GetStringHeight() + 6 + support:GetStringHeight() + padY + 8
     PP.Size(frame, availW, height)
     PP.CreateBorder(frame, 0.95, 0.65, 0.15, 1, 1)
 
@@ -87,19 +87,19 @@ end
 -- ItruliaQoL:BuildEUIModulePage; this one has no module to hand it.
 function ItruliaEUI:BuildGeneralPage(parent, yOffset)
     local QoL = self.QoL
-    local W = self.EUI.Widgets
+    local widgets = self.EUI.Widgets
     local y = yOffset
     local _, h
 
-    _, h = W:Spacer(parent, y, 8)
+    _, h = widgets:Spacer(parent, y, 8)
     y = y - h
-    _, h = W:SectionHeader(parent, "GENERAL", y)
+    _, h = widgets:SectionHeader(parent, "GENERAL", y)
     y = y - h
 
     local spec = self:GetGeneralEUIOptions()
 
     if spec and spec.rows then
-        y = QoL:RenderEUIList(W, parent, y, spec.rows)
+        y = QoL:RenderEUIList(widgets, parent, y, spec.rows)
     end
 
     return math.abs(y)
@@ -134,7 +134,7 @@ function ItruliaEUI:InjectSidebar(entries)
     EUI.ADDON_GROUPS = EUI.ADDON_GROUPS or {}
 
     for _, group in ipairs(EUI.ADDON_GROUPS) do
-        if group.key == GROUP_KEY then
+        if group.key == groupKey then
             group.members = members
 
             return
@@ -144,8 +144,8 @@ function ItruliaEUI:InjectSidebar(entries)
     -- Appended rather than prepended: a companion addon has no business pushing
     -- EllesmereUI's own suite down the sidebar.
     table.insert(EUI.ADDON_GROUPS, {
-        key = GROUP_KEY,
-        label = GROUP_LABEL_COLORED,
+        key = groupKey,
+        label = groupLabelColored,
         members = members,
     })
 end
@@ -205,7 +205,7 @@ function ItruliaEUI:RegisterEUI()
         }
     end
 
-    addEntry("General", "General", { PAGE_GENERAL }, function(_, parent, y)
+    addEntry("General", "General", { pageGeneral }, function(_, parent, y)
         return self:BuildGeneralPage(parent, y)
     end, "Settings for the EllesmereUI-specific pieces of Itrulia's setup.", nil, true)
 
@@ -220,7 +220,7 @@ function ItruliaEUI:RegisterEUI()
             members = { { key = entry.name, module = module } }
         end
 
-        addEntry(entry.name, module.euiDisplay or entry.name, module.EUIPages or { PAGE_SETTINGS },
+        addEntry(entry.name, module.euiDisplay or entry.name, module.EUIPages or { pageSettings },
             function(pageName, parent, y)
                 return QoL:BuildEUIModulePage(module, parent, y, true, pageName)
             end, module.euiDescription, members)
@@ -229,8 +229,8 @@ function ItruliaEUI:RegisterEUI()
     -- Last, after the modules, so the sidebar reads settings-then-housekeeping the
     -- way ItruliaQoL's group does. Both pages are ItruliaQoL's, pointed at this
     -- addon's own database and profile strings by the `self` argument.
-    addEntry("Profiles", "Profiles", { PAGE_PROFILES, PAGE_IMPEXP }, function(pageName, parent, y)
-        if pageName == PAGE_IMPEXP then
+    addEntry("Profiles", "Profiles", { pageProfiles, pageImportExport }, function(pageName, parent, y)
+        if pageName == pageImportExport then
             return QoL:BuildEUIImportExportPage(parent, y, self)
         end
 
@@ -250,7 +250,7 @@ function ItruliaEUI:RegisterEUI()
                 hooksecurefunc(EUI, name, function()
                     -- Our group key, so the "(Inofficial Module)" note lands on our
                     -- header rather than a second time on ItruliaQoL's.
-                    QoL:AttachEUISidebarGroupNote(GROUP_KEY)
+                    QoL:AttachEUISidebarGroupNote(groupKey)
                     QoL:AttachEUISidebarSwitches(entries)
                     QoL:RefreshEUISidebarRows(entries)
                 end)
@@ -270,7 +270,7 @@ function ItruliaEUI:RegisterEUI()
         local build = entry.build
 
         QoL:RegisterEUIModule(entry.key, {
-            title = GROUP_LABEL_COLORED .. " - " .. entry.display,
+            title = groupLabelColored .. " - " .. entry.display,
             description = entry.description or "",
             pages = entry.pages,
             buildPage = function(pageName, parent, yOffset)

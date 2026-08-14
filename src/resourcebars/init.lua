@@ -5,26 +5,26 @@ local ResourceBars = ItruliaEUI:NewModule(moduleName)
 ResourceBars.euiDisplay = "Resource Bars"
 ResourceBars.euiDescription = "Give each power type its own statusbar texture on EllesmereUI's resource and class bars and allow splitting the individual resource items."
 
-local PT = Enum and Enum.PowerType or {}
+local powerType = Enum and Enum.PowerType or {}
 
 ResourceBars.PowerTypes = {
-    { key = "MANA",           label = "Mana",           enum = PT.Mana or 0 },
-    { key = "RAGE",           label = "Rage",           enum = PT.Rage or 1 },
-    { key = "FOCUS",          label = "Focus",          enum = PT.Focus or 2 },
-    { key = "ENERGY",         label = "Energy",         enum = PT.Energy or 3 },
-    { key = "RUNIC_POWER",    label = "Runic Power",    enum = PT.RunicPower or 6 },
-    { key = "LUNAR_POWER",    label = "Astral Power",   enum = PT.LunarPower or 8 },
-    { key = "MAELSTROM",      label = "Maelstrom",      enum = PT.Maelstrom or 11 },
-    { key = "INSANITY",       label = "Insanity",       enum = PT.Insanity or 13 },
-    { key = "FURY",           label = "Fury",           enum = PT.Fury or 17 },
-    { key = "PAIN",           label = "Pain",           enum = PT.Pain or 18 },
-    { key = "COMBO_POINTS",   label = "Combo Points",   enum = PT.ComboPoints or 4,    class = true },
-    { key = "RUNES",          label = "Runes",          enum = PT.Runes or 5,          class = true },
-    { key = "SOUL_SHARDS",    label = "Soul Shards",    enum = PT.SoulShards or 7,     class = true },
-    { key = "HOLY_POWER",     label = "Holy Power",     enum = PT.HolyPower or 9,      class = true },
-    { key = "CHI",            label = "Chi",            enum = PT.Chi or 12,           class = true },
-    { key = "ARCANE_CHARGES", label = "Arcane Charges", enum = PT.ArcaneCharges or 16, class = true },
-    { key = "ESSENCE",        label = "Essence",        enum = PT.Essence or 19,       class = true },
+    { key = "MANA",           label = "Mana",           enum = powerType.Mana or 0 },
+    { key = "RAGE",           label = "Rage",           enum = powerType.Rage or 1 },
+    { key = "FOCUS",          label = "Focus",          enum = powerType.Focus or 2 },
+    { key = "ENERGY",         label = "Energy",         enum = powerType.Energy or 3 },
+    { key = "RUNIC_POWER",    label = "Runic Power",    enum = powerType.RunicPower or 6 },
+    { key = "LUNAR_POWER",    label = "Astral Power",   enum = powerType.LunarPower or 8 },
+    { key = "MAELSTROM",      label = "Maelstrom",      enum = powerType.Maelstrom or 11 },
+    { key = "INSANITY",       label = "Insanity",       enum = powerType.Insanity or 13 },
+    { key = "FURY",           label = "Fury",           enum = powerType.Fury or 17 },
+    { key = "PAIN",           label = "Pain",           enum = powerType.Pain or 18 },
+    { key = "COMBO_POINTS",   label = "Combo Points",   enum = powerType.ComboPoints or 4,    class = true },
+    { key = "RUNES",          label = "Runes",          enum = powerType.Runes or 5,          class = true },
+    { key = "SOUL_SHARDS",    label = "Soul Shards",    enum = powerType.SoulShards or 7,     class = true },
+    { key = "HOLY_POWER",     label = "Holy Power",     enum = powerType.HolyPower or 9,      class = true },
+    { key = "CHI",            label = "Chi",            enum = powerType.Chi or 12,           class = true },
+    { key = "ARCANE_CHARGES", label = "Arcane Charges", enum = powerType.ArcaneCharges or 16, class = true },
+    { key = "ESSENCE",        label = "Essence",        enum = powerType.Essence or 19,       class = true },
 }
 
 ResourceBars.PowerTypesByEnum = {}

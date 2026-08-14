@@ -59,7 +59,7 @@ local function stopGlow(plate)
     plate._itruliaTargetGlowStyle = nil
 end
 
-local function ensureGlow(plate, s)
+local function ensureGlow(plate, settings)
     local Glows = EllesmereUI and EllesmereUI.Glows
 
     if not Glows then
@@ -76,54 +76,54 @@ local function ensureGlow(plate, s)
         plate._itruliaTargetOverlay = overlay
     end
 
-    local c, bg = s.color, s.bgColor
+    local color, bg = settings.color, settings.bgColor
 
     if plate._itruliaTargetGlowActive
-        and plate._itruliaTargetGlowStyle == s.style
-        and plate._itruliaTargetGlowR == c.r and plate._itruliaTargetGlowG == c.g and plate._itruliaTargetGlowB == c.b
-        and plate._itruliaTargetGlowBgOn == s.bgOn
+        and plate._itruliaTargetGlowStyle == settings.style
+        and plate._itruliaTargetGlowR == color.r and plate._itruliaTargetGlowG == color.g and plate._itruliaTargetGlowB == color.b
+        and plate._itruliaTargetGlowBgOn == settings.bgOn
         and plate._itruliaTargetGlowBgR == bg.r and plate._itruliaTargetGlowBgG == bg.g and plate._itruliaTargetGlowBgB == bg.b
-        and plate._itruliaTargetGlowN == s.lines
-        and plate._itruliaTargetGlowTh == s.thickness
-        and plate._itruliaTargetGlowPeriod == s.period then
+        and plate._itruliaTargetGlowN == settings.lines
+        and plate._itruliaTargetGlowTh == settings.thickness
+        and plate._itruliaTargetGlowPeriod == settings.period then
         return true
     end
 
     Glows.StopAllGlows(overlay)
 
-    local w, h = plate.cast:GetWidth(), plate.cast:GetHeight()
+    local width, height = plate.cast:GetWidth(), plate.cast:GetHeight()
 
-    if w < 5 then
-        w = 100
+    if width < 5 then
+        width = 100
     end
 
-    if h < 5 then
-        h = 14
+    if height < 5 then
+        height = 14
     end
 
-    if s.style == 4 then
-        Glows.StartAutoCastShine(overlay, w, c.r, c.g, c.b, 1.0, h)
+    if settings.style == 4 then
+        Glows.StartAutoCastShine(overlay, width, color.r, color.g, color.b, 1.0, height)
     else
-        local lineLen = math.floor((w + h) * (2 / s.lines - 0.1))
-        lineLen = math.min(lineLen, math.min(w, h))
+        local lineLen = math.floor((width + height) * (2 / settings.lines - 0.1))
+        lineLen = math.min(lineLen, math.min(width, height))
 
         if lineLen < 1 then
             lineLen = 1
         end
 
-        Glows.StartProceduralAnts(overlay, s.lines, s.thickness, s.period, lineLen,
-            c.r, c.g, c.b, w, h,
-            s.bgOn and (bg.r or 0) or nil, bg.g or 0, bg.b or 0)
+        Glows.StartProceduralAnts(overlay, settings.lines, settings.thickness, settings.period, lineLen,
+            color.r, color.g, color.b, width, height,
+            settings.bgOn and (bg.r or 0) or nil, bg.g or 0, bg.b or 0)
     end
 
     plate._itruliaTargetGlowActive = true
-    plate._itruliaTargetGlowStyle = s.style
-    plate._itruliaTargetGlowR, plate._itruliaTargetGlowG, plate._itruliaTargetGlowB = c.r, c.g, c.b
-    plate._itruliaTargetGlowBgOn = s.bgOn
+    plate._itruliaTargetGlowStyle = settings.style
+    plate._itruliaTargetGlowR, plate._itruliaTargetGlowG, plate._itruliaTargetGlowB = color.r, color.g, color.b
+    plate._itruliaTargetGlowBgOn = settings.bgOn
     plate._itruliaTargetGlowBgR, plate._itruliaTargetGlowBgG, plate._itruliaTargetGlowBgB = bg.r, bg.g, bg.b
-    plate._itruliaTargetGlowN = s.lines
-    plate._itruliaTargetGlowTh = s.thickness
-    plate._itruliaTargetGlowPeriod = s.period
+    plate._itruliaTargetGlowN = settings.lines
+    plate._itruliaTargetGlowTh = settings.thickness
+    plate._itruliaTargetGlowPeriod = settings.period
 
     return true
 end
@@ -157,9 +157,9 @@ local function updateTargetGlow(plate)
         return
     end
 
-    local s = glowSettings()
+    local settings = glowSettings()
 
-    if not (s and ensureGlow(plate, s)) then
+    if not (settings and ensureGlow(plate, settings)) then
         return
     end
 
@@ -240,7 +240,7 @@ function Nameplates:RefreshConfig()
     self.frame:RegisterEvent("UNIT_SPELLCAST_EMPOWER_START")
     self.frame:RegisterEvent("UNIT_TARGET")
 
-    -- Plates that were already up when the module was switched on.
+    -- Needed so that already rendered plates are also affected
     for unit in pairs(ns.plates or {}) do
         hookIntoPlate(getPlate(unit))
     end

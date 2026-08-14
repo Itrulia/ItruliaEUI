@@ -2,7 +2,7 @@
 	<Script file="init.lua"/>
 	<Script file="ellesmere.lua"/>
 	<Include file="general\init.xml"/>
-	
+
 	<Include file="nameplates\init.xml"/>
 	<Include file="resourcebars\init.xml"/>
 </Ui>
