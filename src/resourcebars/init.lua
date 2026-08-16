@@ -157,6 +157,14 @@ local function pipBackdrop(pip)
     return tex
 end
 
+-- `size` is separate from sp.borderSize, which stays the border texture's size
+-- key: a border drawn at 0 still has to look up the configured size's texture.
+local function borderArgs(sp, size)
+    return size, sp.borderR, sp.borderG, sp.borderB, sp.borderA,
+        sp.borderTexture, sp.borderTextureOffset, sp.borderTextureOffsetY,
+        sp.borderTextureShiftX, sp.borderTextureShiftY, "resourcebars", sp.borderSize
+end
+
 local function applySplit(key)
     local frame = _G.ERB_SecondaryFrame
 
@@ -176,8 +184,19 @@ local function applySplit(key)
         return
     end
 
-    local split = (key and ResourceBars.db.split[key]) and true or false
+    -- No key is not an instruction to unify: UnitPowerMax reads 0 for a moment on
+    -- a taxi, in a vehicle and mid spec change, and unsplitting there sticks.
+    if not key then
+        return
+    end
 
+    local split = ResourceBars.db.split[key] and true or false
+
+    -- Nothing of ours on the bar and none wanted, so leave it to EllesmereUI
+    -- rather than clearing borders it drew itself.
+    if not (split or frame._itruliaSplit) then
+        return
+    end
 
     local r, g, b, a
     if sp.darkTheme then
@@ -188,25 +207,39 @@ local function applySplit(key)
 
     for _, pip in ipairs(pips) do
         if split then
-            pip:ApplyBorder(sp.borderSize, sp.borderR, sp.borderG, sp.borderB, sp.borderA,
-                sp.borderTexture, sp.borderTextureOffset, sp.borderTextureOffsetY,
-                sp.borderTextureShiftX, sp.borderTextureShiftY, "resourcebars", sp.borderSize)
+            pip._itruliaSplit = true
+            pip:ApplyBorder(borderArgs(sp, sp.borderSize))
 
             local tex = pipBackdrop(pip)
             tex:SetColorTexture(r, g, b, a)
             tex:Show()
-        elseif pip._itruliaSplitBg then
-            pip._itruliaSplitBg:Hide()
-            pip:ApplyBorder(0, 0, 0, 0, 0)
+        elseif pip._itruliaSplit then
+            pip._itruliaSplit = nil
+
+            if pip._itruliaSplitBg then
+                pip._itruliaSplitBg:Hide()
+            end
+
+            -- With "Border on pips" on, the pip has a border of EllesmereUI's own,
+            -- so clearing outright strips one we never drew.
+            if sp.borderOnPips then
+                pip:ApplyBorder(borderArgs(sp, sp.borderSize))
+            else
+                pip:ApplyBorder(0, 0, 0, 0, 0)
+            end
         end
     end
+
+    frame._itruliaSplit = split or nil
 
     local border = frame._barBorder
 
     if border and border.ApplyStyle then
-        border:ApplyStyle(split and 0 or sp.borderSize, sp.borderR, sp.borderG, sp.borderB, sp.borderA,
-            sp.borderTexture, sp.borderTextureOffset, sp.borderTextureOffsetY,
-            sp.borderTextureShiftX, sp.borderTextureShiftY, "resourcebars", sp.borderSize)
+        -- EllesmereUI drops the container border when each pip carries its own,
+        -- runes excepted, where it keeps both.
+        local pipsOwnBorder = sp.borderOnPips and key ~= "RUNES"
+
+        border:ApplyStyle(borderArgs(sp, (split or pipsOwnBorder) and 0 or sp.borderSize))
     end
 
     if frame._barBg then
@@ -283,10 +316,18 @@ function ResourceBars:RefreshConfig()
             self.frame:UnregisterAllEvents()
         end
 
-        for _, pip in ipairs(pipsOf(_G.ERB_SecondaryFrame)) do
+        local frame = _G.ERB_SecondaryFrame
+
+        for _, pip in ipairs(pipsOf(frame)) do
+            pip._itruliaSplit = nil
+
             if pip._itruliaSplitBg then
                 pip._itruliaSplitBg:Hide()
             end
+        end
+
+        if frame then
+            frame._itruliaSplit = nil
         end
 
         local ERB = resourceBarsAddon()
@@ -307,16 +348,27 @@ function ResourceBars:RefreshConfig()
     self.frame:RegisterEvent("UNIT_DISPLAYPOWER")
     self.frame:RegisterEvent("UPDATE_SHAPESHIFT_FORM")
 
-    if not self._applyAllHooked then
-        local ERB = resourceBarsAddon()
+    local ERB = resourceBarsAddon()
 
-        if ERB and ERB.ApplyAll then
-            self._applyAllHooked = true
+    if ERB and not self._applyAllHooked and ERB.ApplyAll then
+        self._applyAllHooked = true
 
-            hooksecurefunc(ERB, "ApplyAll", function()
-                schedule()
-            end)
-        end
+        hooksecurefunc(ERB, "ApplyAll", function()
+            schedule()
+        end)
+    end
+
+    -- Every rebuild re-applies EllesmereUI's own pip borders and container
+    -- background, wiping the split, and most events that rebuild the bar (a max
+    -- power change, landing from a flight path, a talent or form swap) call its
+    -- internal BuildBars without going through ApplyAll. ApplyGapFills is the one
+    -- function BuildBars calls on every branch, so this catches the rest.
+    if ERB and not self._gapFillsHooked and ERB.ApplyGapFills then
+        self._gapFillsHooked = true
+
+        hooksecurefunc(ERB, "ApplyGapFills", function()
+            schedule()
+        end)
     end
 
     self:ApplyTextures()
