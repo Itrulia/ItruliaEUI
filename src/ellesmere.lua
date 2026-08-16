@@ -239,6 +239,12 @@ function ItruliaEUI:RegisterEUI()
 
     self:InjectSidebar(entries)
 
+    local ours = {}
+
+    for _, entry in ipairs(entries) do
+        ours[entry.key] = true
+    end
+
     -- The row switches only exist once EllesmereUI has built its main frame, and
     -- these three are the only ways in. Attaching is idempotent, so firing on every
     -- open costs nothing.
@@ -258,9 +264,15 @@ function ItruliaEUI:RegisterEUI()
         end
 
         -- SelectModule recolours labels from EllesmereUI's own state, so our disabled
-        -- grey has to be reapplied after it.
+        -- grey has to be reapplied after it. It is also where the row `/ieui` reopens
+        -- is remembered from -- EllesmereUI keeps the tab within a module itself, so
+        -- the row is all we hold on to.
         if EUI.SelectModule then
-            hooksecurefunc(EUI, "SelectModule", function()
+            hooksecurefunc(EUI, "SelectModule", function(_, folderName)
+                if ours[folderName] then
+                    QoL:RememberEUIModule(folderName, groupKey)
+                end
+
                 QoL:RefreshEUISidebarRows(entries)
             end)
         end
@@ -294,4 +306,28 @@ function ItruliaEUI:RegisterEUI()
             self:ToggleTestMode(active and true or false)
         end)
     end
+end
+
+-- `/ieui` reopens the row it was left on, General on the first open of a session.
+-- Our group sits below EllesmereUI's own suite, so the row is off screen until the
+-- sidebar is scrolled to it -- both borrowed from ItruliaQoL, which is also where
+-- the row is remembered (per group, so ours is not its).
+function ItruliaEUI:OpenEUI()
+    local EUI = self.EUI
+    local QoL = self.QoL
+
+    if not (EUI and EUI.ShowModule) then
+        return false
+    end
+
+    local moduleKey = (QoL and QoL.GetLastEUIModule and QoL:GetLastEUIModule(groupKey))
+        or (addonName .. "_General")
+
+    EUI:ShowModule(moduleKey)
+
+    if QoL and QoL.ScrollEUISidebarToGroup then
+        QoL:ScrollEUISidebarToGroup(moduleKey, groupKey)
+    end
+
+    return true
 end

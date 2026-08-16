@@ -154,9 +154,7 @@ function ItruliaEUI:SlashProcessor(input)
     local arg = input and input:lower():match("^%s*(%S*)") or ""
 
     if arg == "" or arg == "config" or arg == "c" then
-        if self.EUI and self.EUI.ShowModule then
-            self.EUI:ShowModule(addonName .. "_General")
-        else
+        if not self:OpenEUI() then
             self:Print("|cffff8000EllesmereUI is not available|r. These settings have no other panel.")
         end
     elseif arg == "test" or arg == "t" then

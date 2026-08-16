@@ -4,6 +4,7 @@ EllesmereUI-specific companion to [ItruliaQoL](../ItruliaQoL/readme.md).
 
 ## Features
 
+- **Minimap** - right click the minimap to open the tracking menu at the cursor, so tracking stays reachable with EllesmereUI's tracking button hidden.
 - **Nameplates** - glow the cast bar of any cast aimed at you, drawn with the same look of EllesmereUI's own important-cast glow.
 - **Resource Bars** - give each power type its own statusbar texture. Also allows splitting the class resources into seperate items.
 
