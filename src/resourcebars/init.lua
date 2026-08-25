@@ -94,18 +94,51 @@ local function texturePath(name)
     return ItruliaEUI.LSM:Fetch("statusbar", name)
 end
 
+-- EllesmereUI's global pixel-snap hook caches per StatusBar, not per fill texture,
+-- so the fresh fill a SetStatusBarTexture swap mints comes back snapping to the
+-- pixel grid: a patterned texture then shimmers every time the value moves, which
+-- is only ever in combat. Anything we set it up with has to be unsnapped again.
+local function unsnapFill(texture)
+    if not texture then
+        return
+    end
+
+    local PP = ItruliaEUI.EUI and ItruliaEUI.EUI.PP
+
+    if PP and PP.DisablePixelSnap then
+        PP.DisablePixelSnap(texture)
+    elseif texture.SetSnapToPixelGrid then
+        texture:SetSnapToPixelGrid(false)
+        texture:SetTexelSnappingBias(0)
+    end
+end
+
+-- Retextures the fill in place rather than swapping it. A swap throws away the
+-- object EllesmereUI's colour, gradient, rotation and fill opacity live on, and the
+-- one its background and spark are anchored to, so the bar reads white and
+-- unbounded until whatever writes those runs again.
 local function paintBar(bar, path)
     if not (bar and path) then
         return
     end
 
-    local sb = bar._sb
+    local statusBar = bar._sb or bar
+    local fill = statusBar.GetStatusBarTexture and statusBar:GetStatusBarTexture()
 
-    if sb and sb.SetStatusBarTexture then
-        sb:SetStatusBarTexture(path)
-    elseif bar.SetStatusBarTexture then
-        bar:SetStatusBarTexture(path)
+    if not fill then
+        if statusBar.SetStatusBarTexture then
+            statusBar:SetStatusBarTexture(path)
+            unsnapFill(statusBar.GetStatusBarTexture and statusBar:GetStatusBarTexture())
+        end
+
+        return
     end
+
+    if fill:GetTexture() ~= path then
+        fill:SetTexture(path)
+    end
+
+    unsnapFill(fill)
 end
 
 local function pipsOf(frame)
@@ -124,9 +157,38 @@ local function pipsOf(frame)
     return found
 end
 
+local function unsnapOverlay(overlay)
+    if not overlay then
+        return
+    end
+
+    unsnapFill(overlay:GetStatusBarTexture())
+end
+
+-- ApplyTexture swaps the recharge overlay's statusbar texture, and the secret value
+-- overlays EllesmereUI builds in combat swap their own, so every fill a pip renders
+-- through needs the same unsnapping as a bar's.
+local function unsnapPip(pip)
+    unsnapFill(pip._fill)
+    unsnapOverlay(pip._rechargeBar)
+    unsnapOverlay(pip._secretBar)
+    unsnapOverlay(pip._secretThreshBar)
+    unsnapOverlay(pip._bandResetBar)
+
+    if pip._bandBars then
+        for _, overlay in ipairs(pip._bandBars) do
+            unsnapOverlay(overlay)
+        end
+    end
+end
+
 local function paintPips(key)
     for _, pip in ipairs(pipsOf(_G.ERB_SecondaryFrame)) do
-        pip:ApplyTexture(key)
+        if pip._texKey ~= key then
+            pip:ApplyTexture(key)
+        end
+
+        unsnapPip(pip)
     end
 end
 
