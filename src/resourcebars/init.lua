@@ -113,6 +113,70 @@ local function unsnapFill(texture)
     end
 end
 
+local function ownedByResourceBars(frame)
+    for _ = 1, 3 do
+        if not frame then
+            return false
+        end
+
+        if frame == _G.ERB_PrimaryBar or frame == _G.ERB_SecondaryBar
+            or frame == _G.ERB_SecondaryFrame then
+            return true
+        end
+
+        frame = frame:GetParent()
+    end
+
+    return false
+end
+
+-- The pixel-snap cache above only helps the FIRST swap on each StatusBar: every
+-- later SetStatusBarTexture on it (BuildBars re-applying the configured texture,
+-- the recharge and secret-value overlays the pips create lazily mid combat)
+-- mints a fill that snaps again, and our event-driven unsnap can't see those
+-- because no event we watch fires there. Catching the swap itself is the only
+-- hook point that exists in combat, so unsnap the fresh fill of any statusbar
+-- living under the resource bar frames the moment it is swapped.
+local function installSwapHook()
+    if ResourceBars._swapHooked then
+        return
+    end
+
+    ResourceBars._swapHooked = true
+
+    local holder = CreateFrame("StatusBar")
+    holder:Hide()
+
+    local meta = getmetatable(holder)
+    meta = meta and meta.__index
+
+    if not (meta and meta.SetStatusBarTexture) then
+        return
+    end
+
+    hooksecurefunc(meta, "SetStatusBarTexture", function(statusBar)
+        if not (ResourceBars.db and ResourceBars.db.enabled) then
+            return
+        end
+
+        if issecretvalue and issecretvalue(statusBar) then
+            return
+        end
+
+        if issecrettable and issecrettable(statusBar) then
+            return
+        end
+
+        if statusBar:IsForbidden() then
+            return
+        end
+
+        if ownedByResourceBars(statusBar:GetParent()) then
+            unsnapFill(statusBar:GetStatusBarTexture())
+        end
+    end)
+end
+
 -- Retextures the fill in place rather than swapping it. A swap throws away the
 -- object EllesmereUI's colour, gradient, rotation and fill opacity live on, and the
 -- one its background and spark are anchored to, so the bar reads white and
@@ -314,6 +378,60 @@ local function applySplit(key)
     end
 end
 
+local function warriorChargeKey()
+    local _, class = UnitClass("player")
+
+    if class ~= "WARRIOR" then
+        return nil
+    end
+
+    local spec = GetSpecialization()
+
+    if spec == 2 then
+        return "WHIRLWIND_STACKS"
+    end
+
+    if spec == 1 then
+        local ERB = resourceBarsAddon()
+        local profile = ERB and ERB.db and ERB.db.profile
+
+        if profile and profile.secondary and profile.secondary.armsSweepingStrikesBar then
+            return "SWEEPING_STRIKES"
+        end
+    end
+
+    return nil
+end
+
+-- Since the engine-slot handoff (EllesmereUI_WarriorCharges), Whirlwind and
+-- Sweeping Strikes never render the legacy pips: one continuous engine fill
+-- plus separator ticks replaces them. EllesmereUI's BuildBars still runs the
+-- generic pip border logic, so "Border on pips" zeroes the container border
+-- and puts borders on pips that stay hidden, leaving the tracker with no
+-- border at all. Restore the container border for that combination; the
+-- engine fill spans the whole container, so it wraps exactly like a bar-type
+-- resource.
+local function fixWarriorChargeBorder()
+    local frame = _G.ERB_SecondaryFrame
+    local border = frame and frame._barBorder
+
+    if not (border and border.ApplyStyle) then
+        return
+    end
+
+    if not warriorChargeKey() then
+        return
+    end
+
+    local sp = secondaryConfig()
+
+    if not (sp and sp.borderOnPips) then
+        return
+    end
+
+    border:ApplyStyle(borderArgs(sp, sp.borderSize))
+end
+
 function ResourceBars:ApplyTextures()
     if not (self.db and self.db.enabled) then
         return
@@ -334,6 +452,7 @@ function ResourceBars:ApplyTextures()
     end
 
     applySplit(class)
+    fixWarriorChargeBorder()
 end
 
 local pending = false
@@ -400,6 +519,8 @@ function ResourceBars:RefreshConfig()
 
         return
     end
+
+    installSwapHook()
 
     self.frame = self.frame or CreateFrame("Frame")
     self.frame:SetScript("OnEvent", OnEvent)

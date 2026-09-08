@@ -14,6 +14,7 @@ local ResourceBars = ItruliaEUI:GetModule(moduleName)
 local function textureRow(power)
     local row = ItruliaEUI.QoL:EUIStatusbarRow({
         label = power.label,
+        none = true,
         disabled = function()
             return not ResourceBars.db.enabled
         end,
@@ -22,7 +23,22 @@ local function textureRow(power)
         end,
         set = function(value)
             ResourceBars.db.textures[power.key] = value
-            ResourceBars:ApplyTextures()
+
+            if value then
+                ResourceBars:ApplyTextures()
+            else
+                -- Unsetting has to repaint from EllesmereUI's own setting;
+                -- ApplyTextures alone would leave the texture we already
+                -- painted on screen.
+                local ERB = EllesmereUI and EllesmereUI.Lite
+                    and EllesmereUI.Lite.GetAddon("EllesmereUIResourceBars", true)
+
+                if ERB and ERB.ApplyAll then
+                    ERB:ApplyAll()
+                else
+                    ResourceBars:ApplyTextures()
+                end
+            end
         end,
     })
 
@@ -108,9 +124,8 @@ function ResourceBars:GetEUIOptions()
     rows[#rows + 1] = {
         type = "execute",
         label = "Clear All Textures",
-        -- The only way back to "unset": the dropdowns list the textures
-        -- LibSharedMedia knows about and have no entry standing for "leave this
-        -- one to EllesmereUI", so clearing is a button rather than a menu item.
+        -- Each dropdown's "None" entry unsets one resource; this wipes every
+        -- override at once.
         func = function()
             ResourceBars.db.textures = {}
 
